@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.util.Locale.getDefault
 
 @Composable
 fun ModelSelectionDialog(
@@ -22,7 +23,7 @@ fun ModelSelectionDialog(
             Text("Select Model")
         },
         text = {
-            androidx.compose.foundation.layout.Column {
+            Column {
 
                 models.forEach { modelPath ->
 
@@ -30,12 +31,15 @@ fun ModelSelectionDialog(
                         onClick = {
                             onModelSelected(modelPath)
                         },
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
                     ) {
                         Text(
                             modelPath
                                 .substringAfterLast("/")
                                 .removeSuffix(".glb")
+                                .uppercase(getDefault())
                         )
                     }
                 }

@@ -78,7 +78,7 @@ fun ModelViewerScreen(paddingValues: PaddingValues) {
                 onClose = {
                     models = models.filter { it.id != model.id }
                 },
-               // labels = getLabels(model.modelPath)
+             labels = getLabels(model.modelPath)
             )
         }
 
