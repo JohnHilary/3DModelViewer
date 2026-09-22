@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +64,8 @@ fun ModelContainer(
     var currentHeight by remember(model.id) {
         mutableStateOf(model.height)
     }
-
+    val latestModel = rememberUpdatedState(model)
+    val latestOnChange = rememberUpdatedState(onChange)
     Box(
         modifier = modifier
             .offset(
@@ -154,10 +156,9 @@ fun ModelContainer(
                         awaitEachGesture {
                             awaitFirstDown(requireUnconsumed = false)
 
-                            var initialDistance = 0f
-                            var initialWidth = currentWidth
-                            var initialHeight = currentHeight
-                            var resizing = false
+                            var previousDistance = 0f
+                            var gestureWidth = latestModel.value.width
+                            var gestureHeight = latestModel.value.height
 
                             while (true) {
                                 val event = awaitPointerEvent()
@@ -167,44 +168,47 @@ fun ModelContainer(
                                     break
                                 }
 
-                                if (pressed.size >= 2) {
+                                if (pressed.size == 2) {
                                     val first = pressed[0].position
                                     val second = pressed[1].position
 
                                     val dx = second.x - first.x
                                     val dy = second.y - first.y
-                                    val distance = kotlin.math.sqrt(dx * dx + dy * dy)
 
-                                    if (!resizing) {
-                                        initialDistance = distance
-                                        initialWidth = currentWidth
-                                        initialHeight = currentHeight
-                                        resizing = true
-                                    } else if (initialDistance > 0f) {
-                                        val scale = distance / initialDistance
+                                    val distance = kotlin.math.sqrt(
+                                        dx * dx + dy * dy
+                                    )
 
-                                        val newWidth =
-                                            (initialWidth * scale).coerceIn(140f, 600f)
-                                        val newHeight =
-                                            (initialHeight * scale).coerceIn(140f, 600f)
+                                    if (previousDistance > 0f && distance > 0f) {
+                                        val scaleChange = distance / previousDistance
 
-                                        currentWidth = newWidth
-                                        currentHeight = newHeight
+                                        if (kotlin.math.abs(scaleChange - 1f) > 0.001f) {
+                                            gestureWidth =
+                                                (gestureWidth * scaleChange)
+                                                    .coerceIn(140f, 600f)
 
-                                        onChange(
-                                            model.copy(
-                                                width = newWidth,
-                                                height = newHeight
+                                            gestureHeight =
+                                                (gestureHeight * scaleChange)
+                                                    .coerceIn(140f, 600f)
+
+                                            latestOnChange.value(
+                                                latestModel.value.copy(
+                                                    width = gestureWidth,
+                                                    height = gestureHeight
+                                                )
                                             )
-                                        )
+                                        }
                                     }
+
+                                    previousDistance = distance
+                                } else {
+                                    previousDistance = 0f
                                 }
                             }
                         }
                     }
             )
         }
-
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -213,8 +217,8 @@ fun ModelContainer(
                 .background(Color.DarkGray)
                 .pointerInput(model.id, model.interactionMode) {
                     if (!model.interactionMode) {
-                        var currentX = model.x
-                        var currentY = model.y
+                        var currentX = latestModel.value.x
+                        var currentY = latestModel.value.y
 
                         detectDragGestures(
                             onDrag = { change, dragAmount ->
@@ -228,14 +232,11 @@ fun ModelContainer(
                                     dragAmount.y.toDp().value
                                 }
 
-                                currentX =
-                                    (currentX + deltaX).coerceAtLeast(0f)
+                                currentX = (currentX + deltaX).coerceAtLeast(0f)
+                                currentY = (currentY + deltaY).coerceAtLeast(0f)
 
-                                currentY =
-                                    (currentY + deltaY).coerceAtLeast(0f)
-
-                                onChange(
-                                    model.copy(
+                                latestOnChange.value(
+                                    latestModel.value.copy(
                                         x = currentX,
                                         y = currentY
                                     )
@@ -243,6 +244,7 @@ fun ModelContainer(
                             }
                         )
                     }
+
                 },
             contentAlignment = Alignment.Center
         ) {
