@@ -18,22 +18,12 @@ import com.threed.modelviewer.ui.theme._3DModelViewerTheme
 
 class MainActivity : ComponentActivity() {
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             _3DModelViewerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-                    CenterAlignedTopAppBar(title = {
-                        Text("3DModelViewer")
-                    }, colors =     TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground
-                    ))
-                }) { paddingValues ->
-                    ModelViewerScreen(paddingValues)
-                }
+                ModelViewerScreen()
             }
         }
     }
